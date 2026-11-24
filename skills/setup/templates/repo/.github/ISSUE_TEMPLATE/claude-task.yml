@@ -1,12 +1,14 @@
 name: Claude への依頼書
-description: Claude に作業してもらうための Issue。書き終えたら「claude」ラベルを付けると作業が始まります。
+description: Claude に作業してもらうための Issue。書き終えたら「claude」か「claude-auto」ラベルを付けると作業が始まります。
 title: "[依頼] "
 body:
   - type: markdown
     attributes:
       value: |
         **書き方のコツ**：1つの依頼書には1つの「やってほしいこと」だけ。新人のアシスタントに頼むつもりで、具体的に書いてください。
-        書き終えて「これで頼んでOK」と思ったら、右側の Labels から **claude** を付けます。
+        書き終えて「これで頼んでOK」と思ったら、右側の Labels からどちらかを付けます。
+        - **claude**：作業して PR（提出物）まで作る。マージは自分でする
+        - **claude-auto**：作業して、決まった条件をすべて満たしたら自動でマージしてよい（見た目や文章の小さな変更向き）
 
   - type: textarea
     id: goal
@@ -30,7 +32,7 @@ body:
     id: done
     attributes:
       label: 完成の条件
-      description: これが全部できていたら完成、というチェックリスト。あとで確認するときにも使います
+      description: これが全部できていたら完成、というチェックリスト。レビュー役の Claude と自動マージの関門も、これを1つずつ確かめます。「見ればわかる」形で書いてください
       value: |
         - [ ]
         - [ ]

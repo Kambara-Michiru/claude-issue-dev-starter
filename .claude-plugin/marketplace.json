@@ -8,7 +8,7 @@
     {
       "name": "issue-dev",
       "source": "./",
-      "description": "/issue-dev:setup で仕組みを導入、/issue-dev:new-issue で依頼書を作成、/issue-dev:check で状況を確認"
+      "description": "/issue-dev:setup で導入、/issue-dev:new-issue で依頼書、/issue-dev:check で状況確認、/issue-dev:automerge で自動マージの切り替え"
     }
   ]
 }

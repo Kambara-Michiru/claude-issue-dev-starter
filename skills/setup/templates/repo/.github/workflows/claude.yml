@@ -1,6 +1,7 @@
 # Issue や PR のコメントで「@claude」と呼びかけたときに Claude が返事をするワークフロー。
 # 例：@claude ボタンの色をもう少し明るくして
 # 呼びかけられるのは、リポジトリに書き込み権限のある人だけです。
+# Claude が PR に追加で push すると「チェックとレビュー」と「関門」がもう一度動きます。
 name: Claude（@claude で呼ぶ）
 
 on:
@@ -38,5 +39,6 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: |
-            --max-turns 30
-            --append-system-prompt "CLAUDE.md のルールに必ず従う。返事は日本語で、専門用語をなるべく使わずに書く。"
+            --max-turns 40
+            --allowedTools "Bash(bash scripts/check.sh)"
+            --append-system-prompt "CLAUDE.md のルールに必ず従う。ファイルを変えたら、push する前に bash scripts/check.sh を実行して、通るまで直す。返事は日本語で、専門用語をなるべく使わずに書く。"

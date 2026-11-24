@@ -1,0 +1,130 @@
+# 自動マージの関門（ゲート）。
+#
+# 「チェックとレビュー」が終わるたびに動き、.github/harness/policy.json のルールで判定します。
+#   ・判定するのは AI ではなく、決まったルール（.github/harness/gate.py）
+#   ・このワークフローは、いつも main ブランチの版で動きます。PR の中で関門やルールを
+#     書き換えても、その PR の判定には使われません
+#   ・mode が shadow（練習）のうちは、判定をコメントするだけでマージはしません
+#   ・止めたいときは、PR に hold ラベルを付けるか、policy.json の mode を off にします
+name: Claude（自動マージの関門）
+
+on:
+  workflow_run:
+    workflows: ["Claude（チェックとレビュー）", "Claude（依頼書から作業）"]
+    types: [completed]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: claude-gate-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    # 新しい push で途中キャンセルされた実行は判定しない（新しい実行の結果で判定する）
+    if: github.event.workflow_run.conclusion != 'cancelled'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: read
+      actions: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: main ブランチの関門とルールを取り出す
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: .github/harness
+
+      - name: チェックの結果を受け取る
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: harness-checks
+          path: in/checks
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: レビューの結果を受け取る
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: harness-review
+          path: in/review
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      - name: 判定する
+        id: decide
+        run: |
+          set -euo pipefail
+          mkdir -p in/checks in/review
+          [ -f in/checks/checks.json ] || echo '{}' > in/checks/checks.json
+          [ -f in/review/review.json ] || echo '{}' > in/review/review.json
+          [ -f in/review/run.json ] || echo '{}' > in/review/run.json
+
+          pr=$(jq -r '.pr_number // empty' in/review/run.json)
+          [ -n "$pr" ] || pr=$(jq -r '.pr_number // empty' in/checks/checks.json)
+          if ! [[ "$pr" =~ ^[0-9]+$ ]]; then
+            echo "対象の PR がないので終わります"; echo "skip=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          echo "pr=$pr" >> "$GITHUB_OUTPUT"
+
+          # チェックとレビューが同じ中身を見たか（どちらも記録した SHA が一致するか）
+          c_sha=$(jq -r '.head_sha // empty' in/checks/checks.json)
+          r_sha=$(jq -r '.head_sha // empty' in/review/run.json)
+          if [ "$c_sha" != "$r_sha" ]; then echo '{}' > in/review/run.json; fi
+
+          gh pr view "$pr" --repo "$GITHUB_REPOSITORY" \
+            --json number,state,isDraft,labels,author,headRefName,headRefOid,body,changedFiles,additions,deletions,files > pr.json
+
+          issue=$(jq -r '.body' pr.json | grep -oiE '(close[sd]?|fix(e[sd])?|resolve[sd]?) #[0-9]+' | head -1 | grep -oE '[0-9]+' || true)
+          if [ -n "$issue" ]; then
+            gh api "repos/$GITHUB_REPOSITORY/issues/$issue" --jq '{author_association}' > issue.json || echo '{}' > issue.json
+          else
+            echo '{}' > issue.json
+          fi
+
+          python3 .github/harness/gate.py \
+            --policy .github/harness/policy.json --pr pr.json \
+            --checks in/checks/checks.json --review in/review/review.json \
+            --issue issue.json --run in/review/run.json \
+            --comment-out comment.md > decision.json
+          cat decision.json
+          echo "merge=$(jq -r .merge decision.json)" >> "$GITHUB_OUTPUT"
+          echo "sha=$(jq -r '.head_sha // empty' decision.json)" >> "$GITHUB_OUTPUT"
+          echo "method=$(jq -r '.merge_method // "squash"' decision.json)" >> "$GITHUB_OUTPUT"
+
+      - name: 判定を PR にコメントする
+        if: steps.decide.outputs.skip != 'true'
+        env:
+          PR: ${{ steps.decide.outputs.pr }}
+        run: |
+          [ -s comment.md ] || exit 0
+          id=$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR/comments" --paginate \
+                 --jq '[.[] | select(.body | startswith("<!-- harness-gate -->"))][-1].id // empty')
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$id" -F body=@comment.md >/dev/null
+          else
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file comment.md
+          fi
+
+      - name: マージする
+        if: steps.decide.outputs.merge == 'true'
+        env:
+          PR: ${{ steps.decide.outputs.pr }}
+          SHA: ${{ steps.decide.outputs.sha }}
+          METHOD: ${{ steps.decide.outputs.method }}
+        run: |
+          set -euo pipefail
+          case "$METHOD" in squash|merge|rebase) ;; *) METHOD=squash ;; esac
+          # --match-head-commit：判定したときから中身が変わっていたらマージしない
+          if gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" "--$METHOD" --delete-branch --match-head-commit "$SHA"; then
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "🤖 関門の条件をすべて満たしたので、自動でマージしました。問題があれば、この PR の「Revert」ボタンで元に戻せます。"
+          else
+            gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body "⚠️ 関門は通過しましたが、マージできませんでした（main が先に進んだ、または保護ルールに引っかかった可能性）。人が確認してください。"
+          fi

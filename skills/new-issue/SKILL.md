@@ -61,9 +61,14 @@ OK をもらったら、本文を一時ファイルに書いて Issue を作る�
 gh issue create --title "[依頼] …" --body-file <一時ファイル>
 ```
 
-作ったあと、相手に聞く：「このまま Claude に作業を始めてもらいますか？」
+作ったあと、相手に聞く：「このまま Claude に作業を始めてもらいますか？」選択肢を出す。
 
-- はい → `gh issue edit <番号> --add-label claude`。数分で Issue に報告が届くこと、`gh issue view <番号> --web` でブラウザから見られることを伝える
-- まだ → 「あとで GitHub の画面で Labels から claude を付ければ始まります」と伝える
+- **作って、マージは自分でする** → `gh issue edit <番号> --add-label claude`
+- **作って、条件を満たせば自動でマージしてよい** → `gh issue edit <番号> --add-label claude-auto`
+  - 見た目や文章の小さな変更に向いている。ログイン、お金、個人情報、大きな変更は `claude` をすすめる
+  - 自動マージが練習モードのうちは、判定がコメントされるだけで、マージは人がすることも伝える
+- **まだ** → 「あとで GitHub の画面で Labels から claude か claude-auto を付ければ始まります」と伝える
+
+ラベルを付けたら、数分〜十数分で依頼書に報告が届くこと、`gh issue view <番号> --web` でブラウザから見られることを伝える。
 
 一時ファイルは最後に消す。

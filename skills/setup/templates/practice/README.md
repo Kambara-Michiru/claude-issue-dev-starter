@@ -6,8 +6,8 @@ Issue に「やってほしいこと」を書いて、Claude に作業しても�
 
 1. **Issues** タブ →「New issue」→「Claude への依頼書」を選ぶ
 2. やってほしいことを書いて保存する
-3. 右側の **Labels** で `claude` を付ける → Claude が作業を始めます
-4. Issue に Claude からの報告が届いたら、リンクから PR（提出物）を作る
-5. PR の「Files changed」で変更を見て、よければ **Merge** する
+3. 右側の **Labels** で `claude`（マージは自分でする）か `claude-auto`（条件を満たせば自動マージ）を付ける → Claude が作業を始めます
+4. Issue に「作業が終わりました。提出物：#番号」と届いたら、その PR を開く
+5. レビュー役の Claude と関門のコメントを読み、「Files changed」で変更を見て、よければ **Merge** する
 
 直してほしいときは、PR のコメントに `@claude ここをこう直して` と書きます。

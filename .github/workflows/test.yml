@@ -1,0 +1,39 @@
+# このスターター自身のテスト（ハーネスのためのハーネス）
+name: test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v6
+      - name: 関門（gate.py）のテスト
+        run: python3 tests/test_gate.py
+      - name: 機械のチェック（check.sh）のテスト
+        run: bash tests/test_check.sh
+      - name: YAML と JSON が壊れていないか
+        run: |
+          python3 -c "import yaml" 2>/dev/null || python3 -m pip install -q --break-system-packages pyyaml
+          python3 - <<'PY'
+          import glob, json, sys, yaml
+          bad = 0
+          for f in glob.glob("skills/**/*.yml", recursive=True) + glob.glob("skills/**/.github/**/*.yml", recursive=True):
+              try: yaml.safe_load(open(f))
+              except Exception as e: print("NG", f, e); bad = 1
+          for f in glob.glob(".claude-plugin/*.json") + glob.glob("skills/**/*.json", recursive=True) + glob.glob("skills/**/.github/**/*.json", recursive=True):
+              try: json.load(open(f))
+              except Exception as e: print("NG", f, e); bad = 1
+          sys.exit(bad)
+          PY
+      - name: ワークフローの文法チェック（actionlint）
+        run: |
+          bash <(curl -sSfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color -shellcheck= -pyflakes= skills/setup/templates/repo/.github/workflows/*.yml .github/workflows/*.yml

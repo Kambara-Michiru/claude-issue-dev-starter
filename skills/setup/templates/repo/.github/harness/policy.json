@@ -1,0 +1,36 @@
+{
+  "_説明": "自動マージのルール。変更できるのは main ブランチ上のこのファイルだけ（PR の中で書き換えても、判定には使われません）。",
+
+  "mode": "shadow",
+  "_mode の意味": "off = 自動マージしない / shadow = 練習モード（判定だけしてコメントする。マージはしない）/ on = 条件を満たしたら自動マージする",
+
+  "auto_label": "claude-auto",
+  "hold_label": "hold",
+  "branch_prefix": "claude/",
+  "trusted_authors": ["app/github-actions", "github-actions[bot]", "app/claude", "claude[bot]"],
+  "trusted_issue_authors": ["OWNER", "MEMBER", "COLLABORATOR"],
+
+  "allowed_risk": ["low"],
+  "blocking_severities": ["blocker", "major"],
+  "require_all_criteria_met": true,
+
+  "max_changed_files": 10,
+  "max_changed_lines": 300,
+
+  "protected_paths": [
+    ".github/**",
+    "CLAUDE.md",
+    "docs/agent/**",
+    "scripts/check.sh",
+    "scripts/check.local.sh",
+    "**/.env*",
+    "**/*.pem",
+    "**/*.key",
+    "**/migrations/**",
+    "package-lock.json",
+    "pnpm-lock.yaml",
+    "yarn.lock"
+  ],
+
+  "merge_method": "squash"
+}
