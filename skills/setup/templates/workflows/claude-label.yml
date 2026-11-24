@@ -1,0 +1,42 @@
+# Issue に「claude」ラベルを付けたときだけ、Claude が作業を始めるワークフロー。
+# ラベルは「この依頼書で作業を始めてOK」という人間のハンコです。
+# ラベルを付けられるのは、リポジトリに書き込み権限のある人だけです。
+name: Claude（ラベルで着手）
+
+on:
+  issues:
+    types: [labeled]
+
+# 同じ Issue で二重に動かないようにする
+concurrency:
+  group: claude-issue-${{ github.event.issue.number }}
+  cancel-in-progress: false
+
+jobs:
+  claude:
+    if: github.event.label.name == 'claude'
+    runs-on: ubuntu-latest
+    # 30分たっても終わらなければ止める（暴走とムダな費用を防ぐ）
+    timeout-minutes: 30
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+      id-token: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+      - uses: anthropics/claude-code-action@v1
+        with:
+          # 認証は2種類のどちらか。設定済みの secret のほうが使われます。
+          #   CLAUDE_CODE_OAUTH_TOKEN … Claude の有料プラン（Pro / Max など）で使う
+          #   ANTHROPIC_API_KEY       … Claude Console の API キー（従量課金）で使う
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          label_trigger: "claude"
+          # --max-turns は「やりとりの上限回数」。大きくするほど粘るが費用も増える
+          claude_args: |
+            --max-turns 40
+            --append-system-prompt "この Issue の完成の条件をすべて満たすように作業する。CLAUDE.md のルールに必ず従う。依頼があいまいなときは作業せず、Issue に質問を書いて止まる。PR の本文には Closes と Issue 番号を書く。報告は日本語で、専門用語をなるべく使わず、変更点と確認方法を書く。"

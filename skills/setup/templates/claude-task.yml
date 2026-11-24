@@ -1,0 +1,55 @@
+name: Claude への依頼書
+description: Claude に作業してもらうための Issue。書き終えたら「claude」ラベルを付けると作業が始まります。
+title: "[依頼] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **書き方のコツ**：1つの依頼書には1つの「やってほしいこと」だけ。新人のアシスタントに頼むつもりで、具体的に書いてください。
+        書き終えて「これで頼んでOK」と思ったら、右側の Labels から **claude** を付けます。
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: やってほしいこと
+      description: 何をどう変えたいかを1〜3行で
+      placeholder: 例）トップページの見出しの下に、自己紹介の文章を3行入れてほしい
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: なぜやりたいか（背景）
+      description: 目的がわかると、Claude が細かいところを正しく判断できます
+      placeholder: 例）初めて来た人に、どんな活動をしているか伝わっていないため
+    validations:
+      required: false
+
+  - type: textarea
+    id: done
+    attributes:
+      label: 完成の条件
+      description: これが全部できていたら完成、というチェックリスト。あとで確認するときにも使います
+      value: |
+        - [ ]
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: refs
+    attributes:
+      label: 参考になるもの
+      description: 関係するファイル、似ているページ、画像、URL など（わからなければ空欄でOK）
+    validations:
+      required: false
+
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: やらないでほしいこと
+      description: 今回は触らないでほしいところ
+      placeholder: 例）色やフォントは変えないでください
+    validations:
+      required: false

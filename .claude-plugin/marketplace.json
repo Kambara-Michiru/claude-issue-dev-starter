@@ -1,0 +1,14 @@
+{
+  "name": "claude-issue-dev-starter",
+  "description": "Issue 駆動で Claude に開発を任せるためのスターター（非エンジニア向け）",
+  "owner": {
+    "name": "Kambara-Michiru"
+  },
+  "plugins": [
+    {
+      "name": "issue-dev",
+      "source": "./",
+      "description": "/issue-dev:setup で仕組みを導入、/issue-dev:new-issue で依頼書を作成、/issue-dev:check で状況を確認"
+    }
+  ]
+}

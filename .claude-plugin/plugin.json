@@ -1,0 +1,12 @@
+{
+  "name": "issue-dev",
+  "description": "非エンジニア向け：GitHub の Issue に「やってほしいこと」を書くと Claude が作業する仕組みを、会話しながら自分のリポジトリに入れるスキル集",
+  "version": "0.1.0",
+  "author": {
+    "name": "Kambara-Michiru",
+    "url": "https://github.com/Kambara-Michiru"
+  },
+  "homepage": "https://github.com/Kambara-Michiru/claude-issue-dev-starter",
+  "repository": "https://github.com/Kambara-Michiru/claude-issue-dev-starter",
+  "license": "MIT"
+}
